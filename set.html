@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+		<title>www.jetaime.ltd</title>
+		<link href="css/mui.min.css" rel="stylesheet" />
+		<script type="text/javascript" src="js/base.js"></script>
+		<script type="text/javascript" src="js/jquery-2.1.4.min.js"></script>
+		<script type="text/javascript" src="js/mui.min.js"></script>
+		<script type="text/javascript">
+			mui.init();
+			mui.plusReady(function() {
+				var web = plus.webview.currentWebview();
+				console.log(web.param);
+			});
+
+			$(function() {
+				pageInit();
+			});
+
+			var text = null;
+
+			function startRecognize() {
+				var options = {};
+				options.engine = 'iFly';
+				options.lang = 'zh-cn';
+				options.punctuation = false;
+				text = "";
+				plus.speech.startRecognize(options, function(s) {
+					text += s;
+				}, function(e) {
+					mui.alert("语音识别失败：" + e.message, "jet@ime");
+				});
+				setTimeout(stopRecognize, 4000);
+			}
+
+			function stopRecognize() {
+				deal();
+				plus.speech.stopRecognize();
+			}
+
+			function deal() {
+				document.getElementById("boxCode").value = text;
+			}
+
+			function pageInit() {
+				var box = cookieGet("box");
+				if(isNull(box)) {
+					box = "851111";
+				}
+				$('input[name="radio1"]').each(function() {
+					if(this.value == box) {
+						this.checked = true;
+					}
+				})
+				var pcode = cookieGet("pcode");
+				if(isNull(pcode)) {
+					pcode = "Z";
+				}
+				$('input[name="radio2"]').each(function() {
+					if(this.value == pcode) {
+						this.checked = true;
+					}
+				})
+
+				var codeauto = cookieGet("codeauto");
+				$('input[name="radioStep"]').each(function() {
+					if(this.value == codeauto) {
+						this.checked = true;
+					}
+				})
+			}
+
+			function choose() {
+				var box = $("input[name='radio1']:checked").val();
+				cookieSet("box", box);
+			}
+
+			function choose2() {
+				var pcode = $("input[name='radio2']:checked").val();
+				cookieSet("pcode", pcode);
+			}
+
+			function ifauto() {
+				var autoStep = $("input[name='radioStep']:checked").val();
+				cookieSet("codeauto", autoStep);
+			}
+		</script>
+
+	</head>
+
+	<body>
+		<header class="mui-bar mui-bar-nav">
+			<a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left"></a>
+			<h1 class="mui-title">配置 </h1>
+		</header>
+
+		<div class="mui-card" style="margin-top: 50px;">
+			<div class="mui-card-header">请选择包裹无序或递减增方向</div>
+			<form class="mui-input-group" onclick="ifauto()">
+				<div class="mui-input-row mui-radio">
+					<label>无序</label>
+					<input name="radioStep" value="0" type="radio">
+				</div>
+				<div class="mui-input-row mui-radio">
+					<label>递减</label>
+					<input name="radioStep" value="-1" type="radio">
+				</div>
+				<div class="mui-input-row mui-radio">
+					<label>递增</label>
+					<input name="radioStep" value="1" type="radio">
+				</div>
+			</form>
+		</div>
+
+		<div class="mui-card">
+			<div class="mui-card-header">请选择物流箱号</div>
+			<form class="mui-input-group" onclick="choose()">
+				<div class="mui-input-row mui-radio">
+					<label>851111</label>
+					<input name="radio1" value="851111" type="radio">
+				</div>
+				<div class="mui-input-row mui-radio">
+					<label>851112</label>
+					<input name="radio1" value="851112" type="radio">
+				</div>
+				<div class="mui-input-row mui-radio">
+					<label>851113</label>
+					<input name="radio1" value="851113" type="radio">
+				</div>
+			</form>
+		</div>
+		<div class="mui-card">
+			<div class="mui-card-header">请选择包裹起始码</div>
+			<form class="mui-input-group" onclick="choose2()">
+				<div class="mui-input-row mui-radio">
+					<label>X</label>
+					<input name="radio2" value="X" type="radio">
+				</div>
+				<div class="mui-input-row mui-radio">
+					<label>Y</label>
+					<input name="radio2" value="Y" type="radio">
+				</div>
+				<div class="mui-input-row mui-radio">
+					<label>Z</label>
+					<input name="radio2" value="Z" type="radio">
+				</div>
+			</form>
+		</div>
+		<div class="mui-card">
+			<form class="mui-input-group">
+				<div class="mui-input-row mui-checkbox mui-disabled">
+					<label>网购订单按时间，商品排序</label>
+					<input name="checkbox1" type="checkbox" checked="" disabled="disabled">
+				</div>
+			</form>
+		</div>
+	</body>
+	<script type="text/javascript">
+	</script>
+
+</html>

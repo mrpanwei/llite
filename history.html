@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+		<title>www.jetaime.ltd</title>
+		<link href="css/mui.min.css" rel="stylesheet" />
+		<script type="text/javascript" src="js/base.js"></script>
+		<script type="text/javascript" src="js/jquery-2.1.4.min.js"></script>
+		<script type="text/javascript" src="js/mui.min.js"></script>
+		<script type="text/javascript">
+			mui.init();
+			mui.plusReady(function() {
+				var web = plus.webview.currentWebview();
+				console.log(web.param);
+				getHistory();
+			});
+
+			function getHistory() {
+				var w = plus.nativeUI.showWaiting("获取数据");
+				jQuery.ajax({
+					type: "get",
+					url: ajaxUrl + "litePackHistory",
+					data: {
+						userSafety: cookieGet("us")
+					},
+					dataType: "jsonp",
+					crossDomain: true,
+					success: function(response) {
+						w.close();
+						if("success" == response[0].status) {
+							var list = response[0].data;
+							var html = "";
+							list.forEach(function(value, index, array) {
+								if(index == 0) {
+									$("#count").html("用于查看当日打包记录(" + array.length + ")");
+								}
+								html += makeBody(array[index].code, array[index].goodsName, array[index].shopName, array[index].userDoTime);
+							});
+							$("#contentList").html(html);
+						}
+					},
+					error: function() {
+						w.close();
+					}
+				})
+			}
+
+			function makeBody(code, goodsName, shopName, doTime) {
+				var html = "";
+				html += "<li class=\"mui-table-view-cell mui-media\">";
+				html += "<a href=\"javascript:;\">";
+				html += "<img class=\"mui-media-object mui-pull-left\" src=\"img/package.png\">";
+				html += "<div class=\"mui-media-body\">";
+				html += code;
+				html += "<p class=\"mui-ellipsis\">" + goodsName + "</p>";
+				html += "<p style=\"float: left;\">" + shopName + "</p>";
+				html += "<p style=\"float: right;\">" + doTime + "</p>";
+				html += "</div>";
+				html += "</a>";
+				html += "</li>";
+				return html;
+			}
+		</script>
+
+	</head>
+
+	<body>
+		<header class="mui-bar mui-bar-nav">
+			<a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left"></a>
+			<h1 class="mui-title">历史记录 </h1>
+		</header>
+
+		<div class="mui-card" style="margin-top: 50px;">
+			<div class="mui-card-header" id="count">用于查看当日打包记录</div>
+
+		</div>
+
+		<ul id="contentList" class="mui-table-view">
+			<!--<li class="mui-table-view-cell mui-media">
+				<a href="javascript:;">
+					<img class="mui-media-object mui-pull-left" src="img/package.png">
+					<div class="mui-media-body">
+						Z00183
+						<p class="mui-ellipsis">红小豆红小豆红小豆红小豆红小豆</p>
+						<p style="float: left;">虹东路店</p>
+						<p style="float: right;">2018-06-15 20:30</p>
+					</div>
+				</a>
+			</li>
+			<li class="mui-table-view-cell mui-media">
+				<a href="javascript:;">
+					<img class="mui-media-object mui-pull-left" src="img/package.png">
+					<div class="mui-media-body">
+						Z00183
+						<p class="mui-ellipsis">红小豆红小豆红小豆红小豆红小豆</p>
+						<p style="float: left;">虹东路店</p>
+						<p style="float: right;">2018-06-15 20:30</p>
+					</div>
+				</a>
+			</li>-->
+
+		</ul>
+	</body>
+
+</html>

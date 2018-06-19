@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+		<title>www.jetaime.ltd</title>
+		<link href="css/mui.min.css" rel="stylesheet" />
+		<script type="text/javascript" src="js/base.js"></script>
+		<script type="text/javascript" src="js/jquery-2.1.4.min.js"></script>
+		<script type="text/javascript" src="js/mui.min.js"></script>
+		<script type="text/javascript">
+			mui.init();
+			mui.plusReady(function() {
+				var web = plus.webview.currentWebview();
+				console.log(web.param);
+				getBoard();
+			});
+
+			function showme(goodsID) {
+				mui.openWindow({
+					url: "boardlist.html",
+					id: "boardlist",
+					extras: {
+						param: goodsID
+					}
+				});
+			}
+
+			function getBoard() {
+					var w = plus.nativeUI.showWaiting("正在获取数据");
+				jQuery.ajax({
+					type: "get",
+					url: ajaxUrl + "liteBoard",
+					data: {
+						userSafety: cookieGet("us")
+					},
+					dataType: "jsonp",
+					crossDomain: true,
+					success: function(response) {
+						w.close();
+						if("success" == response[0].status) {
+							var list = response[0].data;
+							var getSname = "";
+							var fullItem = "",
+								headItem = "",
+								bodyItem = "",
+								Item = "",
+								footerItem = makeFooter();
+							var bodyCount = 0;
+							list.forEach(function(value, index, array) {
+								if(getSname != array[index].supplierName) {
+									if("" != headItem) {
+										//第一完整
+										headItem = headItem.replace("afterCount",bodyCount);
+										Item = headItem + bodyItem + footerItem;
+										fullItem = fullItem + Item;
+										getSname = "";
+										headItem = "";
+										bodyItem = "";
+										bodyCount = 0;
+									}
+									//创建头+身体
+									getSname = array[index].supplierName;
+									headItem = makeHead(getSname);
+									bodyItem += makeBody(array[index].goodsID, array[index].goodsName, array[index].goodsNum);
+									bodyCount = Number(bodyCount) + 1;
+									if(index == array.length - 1) {
+										headItem = headItem.replace("afterCount",bodyCount);
+										Item = headItem + bodyItem + footerItem;
+										fullItem = fullItem + Item;
+										getSname = "";
+										headItem = "";
+										bodyItem = "";
+										bodyCount = 0;
+									}
+								} else {
+									//创建身体
+									bodyItem += makeBody(array[index].goodsID, array[index].goodsName, array[index].goodsNum);
+									bodyCount = Number(bodyCount) + 1;
+									if(index == array.length - 1) {
+										headItem = headItem.replace("afterCount",bodyCount);
+										Item = headItem + bodyItem + footerItem;
+										fullItem = fullItem + Item;
+										getSname = "";
+										headItem = "";
+										bodyItem = "";
+										bodyCount = 0;
+									}
+								}
+							});
+							$("#contentList").html(fullItem);
+						}
+					},
+					error: function() {
+							w.close();
+					}
+				})
+			}
+
+			function makeHead(supplierName) {
+				var html = "";
+				html += "<li class=\"mui-table-view-cell mui-collapse\">";
+				html += "<a class=\"mui-navigate-right\" href=\"#\">" + supplierName + "<span class=\"mui-badge mui-badge-danger\">afterCount</span></a>";
+				html += "<ul class=\"mui-table-view mui-table-view-chevron\">";
+				return html;
+			}
+
+			function makeBody(goodsID, goodsName, goodsNum) {
+				var html = "";
+				html += "<li class=\"mui-table-view-cell\" onclick=\"showme('" + goodsID + "')\" >";
+				html += "<a class=\"mui-navigate-right\" href=\"#\">" + goodsName + "<span style=\"float: right;color:red;\">" + goodsNum + "</span></a>";
+				html += "</li>";
+				return html;
+			}
+
+			function makeFooter() {
+				return "</ul></li>";
+			}
+		</script>
+
+	</head>
+
+	<body>
+		<header class="mui-bar mui-bar-nav">
+			<a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left"></a>
+			<h1 class="mui-title">看板 </h1>
+		</header>
+		<div class="mui-card" style="margin-top: 55px;">
+			<div class="mui-card-header">描述</div>
+			<div class="mui-card-content">
+				<div class="mui-card-content-inner">
+					查看各自供应商待发货商品汇总预览
+				</div>
+			</div>
+			<!--			<div class="mui-card-footer">页脚</div>-->
+		</div>
+
+		<div class="mui-card">
+			<ul id="contentList" class="mui-table-view mui-table-view-chevron">
+
+			</ul>
+		</div>
+
+	</body>
+
+</html>

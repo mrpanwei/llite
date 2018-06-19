@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+		<title>www.jetaime.ltd</title>
+		<link href="css/mui.min.css" rel="stylesheet" />
+		<script type="text/javascript" src="js/base.js"></script>
+		<script type="text/javascript" src="js/jquery-2.1.4.min.js"></script>
+		<script type="text/javascript" src="js/mui.min.js"></script>
+		<script type="text/javascript">
+			mui.init({
+				gestureConfig: {
+					tap: true, //默认为true
+					doubletap: true, //默认为false
+					longtap: true, //默认为false
+					swipe: true, //默认为true
+					drag: true, //默认为true
+					hold: false, //默认为false，不监听
+					release: false //默认为false，不监听
+				}
+			});
+			var ifEmpty = true;
+
+			mui.plusReady(function() {
+				$("#box").html(cookieGet("box"));
+				keyband();
+				getGoodsInfo();
+				setInterval("getGoodsInfo()", "1000");
+
+				var elemListen = document.getElementById("elem");
+
+				elemListen.addEventListener("swipeleft", function() {
+					ignor_click();
+				});
+				elemListen.addEventListener("swiperight", function() {
+					ignor_click();
+				});
+				elemListen.addEventListener("swipeup", function() {
+					ignor_click();
+				});
+				elemListen.addEventListener("swipedown", function() {
+					ignor_click();
+				});
+
+				elemListen.addEventListener("doubletap", function() {
+					ok_click();
+				});
+
+			});
+
+			//绑定事件
+			function keyband() {
+				var last;
+				$("#goodsName").keyup(function(event) { //.input为你的输入框
+					last = event.timeStamp;
+					//利用event的timeStamp来标记时间，这样每次的keyup事件都会修改last的值，注意last必需为全局变量
+					setTimeout(function() { //设时延迟0.5s执行
+						if(last - event.timeStamp == 0)
+						//如果时间差为0（也就是你停止输入0.5s之内都没有其它的keyup事件发生）则做你想要做的事
+						{
+							if(!isNull($("#goodsName").val())) {
+								ifEmpty = true;
+								getGoodsInfo();
+							}
+						}
+					}, 700);
+				});
+			}
+
+			//提取商品
+			function getGoodsInfo() {
+				if(ifEmpty) {
+					var w = plus.nativeUI.showWaiting("获取数据");
+					jQuery.ajax({
+						type: "get",
+						url: ajaxUrl + "liteData",
+						data: {
+							userSafety: cookieGet("us"),
+							goodsName: $("#goodsName").val(),
+							orderBy: ""
+						},
+						dataType: "jsonp",
+						crossDomain: true,
+						success: function(response) {
+							w.close();
+							var mark = "";
+							if("success" == response[0].status) {
+								var list = response[0].data;
+								list.forEach(function(value, index, array) {
+									ifEmpty = false;
+									$("#goodsNameFull").html(array[index].goodsName);
+									$("#detailID").html(array[index].detailID);
+									$("#orderID").html(array[index].orderID);
+									$("#shopName").html(array[index].shopName);
+									$("#goodsPrice").html("¥" + array[index].goodsPrice + "/" + array[index].goodsUnit);
+									mark = array[index].goodsSpec + ";" + array[index].remark;
+									if(1 == mark.length) {
+										$("#remark").hide();
+									} else {
+
+										$("#remark").show();
+										$("#remark").html(mark);
+									}
+									$("#num").html(array[index].num);
+								});
+							} else {
+								//如果查找不到数据的话，直接清空商品名，重新搜索
+								$("#goodsName").val("");
+								ifEmpty = true;
+							}
+						},
+						error: function() {
+							w.close();
+						}
+					})
+				}
+			}
+
+			var text = null;
+
+			function startRecognize() {
+				var options = {};
+
+				options.engine = 'iFly';
+				options.lang = 'zh-cn';
+				options.punctuation = false;
+				text = "";
+				plus.speech.startRecognize(options, function(s) {
+					text += s;
+				}, function(e) {
+					mui.alert("语音识别失败：" + e.message, "jet@ime");
+				});
+				setTimeout(stopRecognize, 4000);
+			}
+
+			function stopRecognize() {
+				deal();
+				plus.speech.stopRecognize();
+			}
+
+			function deal() {
+				document.getElementById("goodsName").value = text;
+				ifEmpty = true;
+			}
+
+			//延迟处理网购商品
+			function ignor_click() {
+				var w = plus.nativeUI.showWaiting("正在处理");
+				jQuery.ajax({
+					type: "get",
+					url: ajaxUrl + "liteIgnore",
+					data: {
+						userSafety: cookieGet("us"),
+						detailID: $("#detailID").val()
+					},
+					dataType: "jsonp",
+					crossDomain: true,
+					success: function(response) {
+						w.close();
+						if("success" == response[0].status) {
+							ifEmpty = true;
+							mui.toast('商品延时成功', {
+								duration: 'short',
+								type: 'div'
+							})
+						} else {
+							mui.alert(response[0].mesg, "jet@ime");
+						}
+					},
+					error: function() {
+						w.close();
+					}
+				})
+			}
+
+			function padAI(num) {
+				return cookieGet("pcode") + pad(num, 5);
+			}
+
+			function pad(num, n) {
+				var len = num.toString().length;
+				while(len < n) {
+					num = "0" + num;
+					len++;
+				}
+				return num;
+			}
+
+			//无货处理
+			function no_click() {
+				var btnArray = ['否', '是'];
+				mui.confirm('本次商品无货，确认零打包么？', 'jet@ime', btnArray, function(e) {
+					if(e.index == 1) {
+						jQuery.ajax({
+							type: "get",
+							url: ajaxUrl + "litePack",
+							data: {
+								userSafety: cookieGet("us"),
+								boxCode: $("#box").html(),
+								packageCode: "ZYXWVU",
+								detailID: $("#detailID").html(),
+								num: "0"
+							},
+							dataType: "jsonp",
+							crossDomain: true,
+							success: function(response) {
+								if("success" == response[0].status) {
+									ifEmpty = true;
+									mui.alert(response[0].mesg, "jet@ime");
+								} else {
+									mui.alert(response[0].mesg, "jet@ime");
+								}
+							},
+							error: function() {
+
+							}
+						})
+					}
+				})
+			}
+
+			//弹框选择处理
+			function ok_click() {
+				var btnArray = ['取消', '确定'];
+				mui.prompt('请输入包裹编号(字母免输入)：', '', 'jet@ime', btnArray, function(e) {
+					if(e.index == 1) {
+						if(!isNull(e.value)) {
+							/*
+							 * 开始提交打包
+							 */
+							jQuery.ajax({
+								type: "get",
+								url: ajaxUrl + "litePack",
+								data: {
+									userSafety: cookieGet("us"),
+									boxCode: $("#box").html(),
+									packageCode: padAI(e.value),
+									detailID: $("#detailID").html(),
+									num: $("#num").html()
+								},
+								dataType: "jsonp",
+								crossDomain: true,
+								success: function(response) {
+									if("success" == response[0].status) {
+										cookieSet("currentCode", e.value);
+										ifEmpty = true;
+										mui.alert(padAI(e.value), "物流打包成功");
+									} else {
+										mui.alert(response[0].mesg, "jet@ime");
+									}
+								},
+								error: function() {
+
+								}
+							})
+						} else {
+							mui.alert("请输入至少1位包裹尾号", "jet@ime");
+						}
+					}
+				}, 'div');
+				document.querySelector('.mui-popup-input input').type = 'tel';
+				document.querySelector('.mui-popup-input input').maxLength = 5;
+				document.querySelector('.mui-popup-input input').focus();
+				//测算并设置初始化值
+				var defaultVal = "";
+				if(cookieGet("codeauto") != "0") {
+					if(!isNull(cookieGet("currentCode"))) {
+						//获取有效数值
+						var validVal = cookieGet("currentCode");
+						var nextVal;
+						if(cookieGet("codeauto") == "-1") {
+							nextVal = Number(validVal) - Number(1);
+						} else if(cookieGet("codeauto") == "1") {
+							nextVal = Number(validVal) + Number(1);
+						}
+						if(Number(nextVal) >= 0) {
+							defaultVal = pad(nextVal, 5);
+						}
+					}
+				}
+				document.querySelector('.mui-popup-input input').value = defaultVal;
+			}
+		</script>
+
+	</head>
+
+	<body>
+		<header class="mui-bar mui-bar-nav">
+			<a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left"></a>
+			<h1 class="mui-title">事务中心 </h1>
+		</header>
+		<div class="mui-input-row" style="margin-top: 50px;">
+			<label id="box" style="font-size: medium; color: crimson;"></label>
+			<input type="text" id="goodsName" class="mui-input-speech mui-input-clear" placeholder="比如商品名称" data-input-clear="4" data-input-speech="4"><span class="mui-icon mui-icon-clear mui-hidden"></span><span onclick="startRecognize()" class="mui-icon mui-icon-speech"></span>
+		</div>
+
+		<!--<div class="mui-card-header">
+			<h4 id="goodsNameFull">...</h4></div>
+		<div class="mui-card-content">
+			<div class="mui-card-content-inner">
+				<p>
+					<h5>处理编号</h5></p>
+				<p>
+					<h4 id="detailID">...</h4></p>
+				<p>
+					<h5>订单编号/配送门店</h5></p>
+				<p>
+					<h4 id="orderID">...</h4></p>
+				<p>
+					<h4 id="shopName">...</h4></p>
+				<p>
+					<h5>销售价(单位)</h5></p>
+				<p>
+					<h4 id="goodsPrice">...</h4></p>
+				<p>
+					<h5 id="remarkTitle" style="display: none;">规格及备注</h5></p>
+				<p>
+					<h4 id="remark" style="display: none;">...</h4></p>
+				<p>
+					<h5>购买数量</h5></p>
+				<p>
+					<h3 id="num" style="font-size:70px; color: orangered;">...</h3></p>
+			</div>
+		</div>-->
+
+		<div class="mui-card" id="elem">
+			<div class="mui-card-header" id="goodsNameFull"></div>
+			<div class="mui-card-header"><span id="orderID"></span><span id="shopName"></span></div>
+			<div class="mui-card-header" id="detailID" style="display: none;"></div>
+			<div class="mui-card-content">
+				<div class="mui-card-content-inner">
+					<p style="color: #333;" id="goodsPrice"></p>
+					<p style="color: #333;" id="remark"></p>
+				</div>
+			</div>
+
+			<div class="mui-card-footer">
+				<a class="mui-card-link">网购确认数量</a>
+				<a id="num" class="mui-card-link" style="font-size:40px; color: orangered;"></a>
+			</div>
+		</div>
+
+		<div class="mui-card-footer">
+			<button onclick="ignor_click()" class="mui-btn-block mui-btn-grey" style="height: 80px;" type="button">延时</button>&nbsp;
+			<button onclick="no_click()" class="mui-btn-block mui-btn-danger" style="height: 80px;" type="button">无货</button>&nbsp;
+			<button onclick="ok_click()" class="mui-btn-block mui-btn-success" style="height: 80px;" type="button">打包</button>
+		</div>
+		</div>
+
+		<div id="sheet1" class="mui-popover mui-popover-bottom mui-popover-action ">
+			<!-- 可选择菜单 -->
+			<ul class="mui-table-view">
+				<li class="mui-table-view-cell">
+					<a id="auto" href="#">自动扫码</a>
+				</li>
+				<li class="mui-table-view-cell">
+					<a id="self" href="#">手工输入</a>
+				</li>
+			</ul>
+			<!-- 取消菜单 -->
+			<ul class="mui-table-view">
+				<li class="mui-table-view-cell">
+					<a href="#sheet1"><b>取消</b></a>
+				</li>
+			</ul>
+		</div>
+
+	</body>
+	<script type="text/javascript">
+	</script>
+
+</html>

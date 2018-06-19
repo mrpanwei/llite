@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html class="ui-page-login">
+
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+		<title>www.jetaime.ltd</title>
+		<link href="css/mui.min.css" rel="stylesheet" />
+		<script type="text/javascript" src="js/base.js"></script>
+		<script type="text/javascript" src="js/mui.min.js"></script>
+		<script type="text/javascript" src="js/jquery-2.1.4.min.js" ></script>
+
+		<style type="text/css">
+			.login-content {
+				position: absolute;
+				top: 30%;
+				width: 90%;
+				left: 50%;
+				margin-left: -45%;
+				border-radius: 10px;
+				padding: 0 25px;
+				background-color: #fff;
+			}
+			
+			.ui-page-login,
+			body {
+				width: 100%;
+				height: 100%;
+				margin: 0;
+				padding: 0;
+			}
+			
+			.ui-page-login {
+				background-image: url("img/login-bg.jpg");
+				background-size: 100% 100%;
+			}
+			
+			.login-content {
+				position: absolute;
+				top: 30%;
+				width: 90%;
+				left: 50%;
+				margin-left: -45%;
+				border-radius: 10px;
+				padding: 0 25px;
+				background-color: #fff;
+			}
+			
+			.login-logo {
+				text-align: center;
+				margin-top: -37px;
+			}
+			
+			.login-logo img {
+				border: 1px solid #fb4746;
+				border-radius: 50%;
+			}
+			
+			.ipttxt-row {
+				margin-top: 12px;
+				display: flex;
+				justify-content: space-between;
+			}
+			
+			.ipttxt-row label {
+				width: 20%;
+			}
+			
+			.ipttxt-row .mui-input {
+				width: 80%;
+				border: 1px solid #fb4746;
+				border-radius: 30px;
+				margin-bottom: 0;
+				background-color: transparent;
+			}
+			
+			.ipttxt-row .mui-input::placeholder {
+				font-size: 14px;
+			}
+			
+			.link-area {
+				margin-top: 12px;
+				margin-bottom: 15px;
+				text-align: right;
+			}
+			
+			.link-area a {
+				color: #fb4746;
+				font-size: 14px;
+			}
+			
+			.mui-btn-login {
+				padding: 10px 0;
+				background-color: #ff7776;
+				border: 1px solid #fb4746;
+				border-radius: 30px;
+				color: #fff;
+			}
+		</style>
+		<script type="text/javascript">
+			mui.init();
+
+			$(function() {
+				var getName = cookieGet("name");
+				var getPswd = cookieGet("pswd");
+				if(!isNull(getName)) {
+					$("#account").val(getName);
+				}
+				if(!isNull(getPswd)) {
+					$("#password").val(getPswd);
+				}
+			})
+		</script>
+	</head>
+
+	<body class="ui-page-login">
+		<!--<header class="mui-bar mui-bar-transparent">
+			<a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left"></a>
+		</header>-->
+		<div class="login-content">
+			<div class="login-logo"><img style="width: 64px;height: 64px;" src="img/default.png" /></div>
+			<form id="login-form">
+				<div class="ipttxt-row">
+					<label><img src="img/accout.png"/></label>
+					<input id="account" type="text" class="mui-input" maxlength="12" placeholder="账号" value="" />
+				</div>
+				<div class="ipttxt-row">
+					<label><img src="img/password.png"/></label>
+					<input id="password" type="password" maxlength="12" class="mui-input" placeholder="密码" />
+				</div>
+				<div class="link-area">
+					<a id="forget" href="javascript:void(0)">忘记密码?</a>
+				</div>
+			</form>
+			<div class="">
+				<button type="button" id="login" class="mui-btn mui-btn-block mui-btn-login">登 录</button>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript">
+		var servicePage = "home.html";
+		var serviceID = "home";
+
+		document.getElementById("forget").addEventListener('tap', function() {
+			mui.alert("暂未开放", "jet@ime");
+		});
+
+		document.getElementById("login").addEventListener('tap', function() {
+			var getUserName = document.getElementById("account").value;
+			var getUserPass = document.getElementById("password").value;
+			var w = plus.nativeUI.showWaiting("正在登录");
+			mui.ajax(ajaxUrl + 'liteLogin', {
+				data: {
+					userName: getUserName,
+					userPwd: getUserPass
+				},
+				crossDomain: true,
+				async: false,
+				type: 'get', //HTTP请求类型
+				timeout: 10000, //超时时间设置为10秒；
+				jsonp: "jsoncallback",
+				success: function(data) {
+					w.close();
+					//服务器返回响应，根据响应结果，分析是否登录成功；
+					var validData = JSON.parse(data);
+					var userSafety = validData.UserSafety;
+					if(!isNull(userSafety)) {
+						cookieSet("us", userSafety);
+
+						cookieSet("name", getUserName);
+						cookieSet("pswd", getUserPass);
+
+						mui.openWindow({
+							url: servicePage,
+							id: serviceID,
+							extras: {
+								param: validData.UserName
+							}
+						});
+					} else {
+						mui.alert("用户名或密码错误", "jet@ime");
+					}
+				},
+				error: function(xhr, type, errorThrown) {
+					w.close();
+					//异常处理；
+					mui.alert(type);
+				}
+			});
+		});
+	</script>
+
+</html>

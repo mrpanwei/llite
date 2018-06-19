@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+		<title>www.jetaime.ltd</title>
+		<link href="css/mui.min.css" rel="stylesheet" />
+		<script type="text/javascript" src="js/base.js"></script>
+		<script type="text/javascript" src="js/jquery-2.1.4.min.js"></script>
+		<script type="text/javascript" src="js/mui.min.js"></script>
+		<script type="text/javascript">
+			mui.init();
+			mui.plusReady(function() {
+				var web = plus.webview.currentWebview();
+				document.getElementById("who").innerHTML = web.param;
+				boxInit();
+				pageInit();
+			});
+
+			function pageInit() {
+				getTop3Goods();
+				getBoard();
+			}
+
+			function getBoard() {
+				jQuery.ajax({
+					type: "get",
+					url: ajaxUrl + "liteBoard",
+					data: {
+						userSafety: cookieGet("us")
+					},
+					dataType: "jsonp",
+					crossDomain: true,
+					success: function(response) {
+						if("success" == response[0].status) {
+							var list = response[0].data;
+							$("#leftNum").html(list.length);
+						}
+					},
+					error: function() {}
+				})
+			}
+
+			function boxInit() {
+				var box = cookieGet("box");
+				if(isNull(box)) {
+					cookieSet("box", "851111");
+				}
+				var pcode = cookieGet("pcode");
+				if(isNull(pcode)) {
+					cookieSet("pcode", "Z");
+				}
+				var auto = cookieGet("codeauto");
+				if(isNull(auto)) {
+					cookieSet("codeauto", "0");
+				}
+
+				var currentCode = cookieGet("currentCode");
+				if(isNull(auto)) {
+					cookieSet("currentCode", "");
+				}
+			}
+
+			//获取高频商品集
+			function getTop3Goods() {
+				var w = plus.nativeUI.showWaiting("正在获取数据");
+				jQuery.ajax({
+					type: "get",
+					url: ajaxUrl + "liteTop3Goods",
+					data: {
+						userSafety: cookieGet("us")
+					},
+					dataType: "jsonp",
+					crossDomain: true,
+					success: function(response) {
+						w.close();
+						if("success" == response[0].status) {
+							var list = response[0].data;
+							list.forEach(function(value, index, array) {
+								$("#g" + index).html(array[index].sp_name);
+								$("#n" + index).html(array[index].num);
+							});
+						}
+					},
+					error: function() {
+						w.close();
+					}
+				})
+
+			}
+		</script>
+
+	</head>
+
+	<body>
+		<header class="mui-bar mui-bar-nav">
+			<a class="mui-icon  mui-pull-left"></a>
+			<h1 id="who" class="mui-title">业务大厅 </h1>
+		</header>
+		<div class="mui-content">
+			<div class="mui-card" style="">
+				<ul class="mui-table-view">
+					<li class="mui-table-view-divider mui-collapse">高频商品待打包(TOP3)</li>
+					<li class="mui-table-view-cell"><span id="g0"></span><span id="n0" class="mui-badge mui-badge-primary"></span></li>
+					<li class="mui-table-view-cell"><span id="g1"></span><span id="n1" class="mui-badge mui-badge-success"></span></li>
+					<li class="mui-table-view-cell"><span id="g2"></span><span id="n2" class="mui-badge"></span></li>
+				</ul>
+			</div>
+			<ul class="mui-table-view mui-grid-view mui-grid-9" style="background-color: white;">
+				<li id="pack" class="mui-table-view-cell mui-media mui-col-xs-4 mui-col-sm-3">
+					<a href="#">
+						<span class="mui-icon mui-icon-person"><span class="mui-badge" id="leftNum"></span></span>
+						<div class="mui-media-body">打包</div>
+					</a>
+				</li>
+				<li id="view" class="mui-table-view-cell mui-media mui-col-xs-4 mui-col-sm-3">
+					<a href="#">
+						<span class="mui-icon mui-icon-search"></span>
+						<div class="mui-media-body">复核</div>
+					</a>
+				</li>
+				<li id="cancel" class="mui-table-view-cell mui-media mui-col-xs-4 mui-col-sm-3">
+					<a href="#">
+						<span class="mui-icon mui-icon-back"></span>
+						<div class="mui-media-body">撤销</div>
+					</a>
+				</li>
+				<li id="set" class="mui-table-view-cell mui-media mui-col-xs-4 mui-col-sm-3">
+					<a href="#">
+						<span class="mui-icon mui-icon-gear"></span>
+						<div class="mui-media-body">配置</div>
+					</a>
+				</li>
+				<li id="board" class="mui-table-view-cell mui-media mui-col-xs-4 mui-col-sm-3">
+					<a href="#">
+						<span class="mui-icon mui-icon-compose"></span>
+						<div class="mui-media-body">汇总</div>
+					</a>
+				</li>
+				<li id="history" class="mui-table-view-cell mui-media mui-col-xs-4 mui-col-sm-3">
+					<a href="#">
+						<span class="mui-icon mui-icon-more"></span>
+						<div class="mui-media-body">记录</div>
+					</a>
+				</li>
+				<li onclick="closeApp();" class=" mui-table-view-cell mui-media mui-col-xs-4 mui-col-sm-3">
+					<a href="#">
+						<span class="mui-icon mui-icon-clear"></span>
+						<div class="mui-media-body">注销</div>
+					</a>
+				</li>
+			</ul>
+		</div>
+
+	</body>
+	<script type="text/javascript">
+		function closeApp() {
+			var btnArray = ['否', '是'];
+			mui.confirm('注销后原有账户配置信息将重置', 'jet@ime', btnArray, function(e) {
+				if(e.index == 1) {
+					localStorage.clear();
+					plus.runtime.restart();
+				}
+			})
+		};
+
+		document.getElementById("pack").addEventListener('tap', function() {
+			mui.openWindow({
+				url: "service.html",
+				id: "service",
+				extras: {
+					param: "service"
+				}
+			});
+		});
+		document.getElementById("view").addEventListener('tap', function() {
+			mui.openWindow({
+				url: "view.html",
+				id: "view",
+				extras: {
+					param: "view"
+				}
+			});
+		});
+		document.getElementById("cancel").addEventListener('tap', function() {
+			mui.openWindow({
+				url: "cancel.html",
+				id: "cancel",
+				extras: {
+					param: "cancel"
+				}
+			});
+		});
+		document.getElementById("set").addEventListener('tap', function() {
+			mui.openWindow({
+				url: "set.html",
+				id: "set",
+				extras: {
+					param: "set"
+				}
+			});
+		});
+		document.getElementById("board").addEventListener('tap', function() {
+			mui.openWindow({
+				url: "board.html",
+				id: "board",
+				extras: {
+					param: "board"
+				}
+			});
+		});
+		document.getElementById("history").addEventListener('tap', function() {
+			mui.openWindow({
+				url: "history.html",
+				id: "history",
+				extras: {
+					param: "history"
+				}
+			});
+		});
+	</script>
+
+</html>

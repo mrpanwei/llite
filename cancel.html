@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+		<title>www.jetaime.ltd</title>
+		<link href="css/mui.min.css" rel="stylesheet" />
+		<script type="text/javascript" src="js/base.js"></script>
+		<script type="text/javascript" src="js/jquery-2.1.4.min.js"></script>
+		<script type="text/javascript" src="js/mui.min.js"></script>
+		<script type="text/javascript">
+			mui.init();
+			mui.plusReady(function() {
+				var web = plus.webview.currentWebview();
+				console.log(web.param);
+				keyband();
+			});
+
+			function keyband() {
+				var last;
+				$("#packageCode").keyup(function(event) { //.input为你的输入框
+					last = event.timeStamp;
+					//利用event的timeStamp来标记时间，这样每次的keyup事件都会修改last的值，注意last必需为全局变量
+					setTimeout(function() { //设时延迟0.5s执行
+						if(last - event.timeStamp == 0)
+						//如果时间差为0（也就是你停止输入0.5s之内都没有其它的keyup事件发生）则做你想要做的事
+						{
+							view_click();
+						}
+					}, 700);
+				});
+			}
+
+			var text = null;
+
+			function startRecognize() {
+				var options = {};
+				options.engine = 'iFly';
+				options.lang = 'zh-cn';
+				options.punctuation = false;
+				text = "";
+				plus.speech.startRecognize(options, function(s) {
+					text += s;
+				}, function(e) {
+					mui.alert("语音识别失败：" + e.message, "jet@ime");
+				});
+				setTimeout(stopRecognize, 4000);
+			}
+
+			function stopRecognize() {
+				deal();
+				plus.speech.stopRecognize();
+			}
+
+			function deal() {
+				document.getElementById("packageCode").value = text;
+				view_click();
+			}
+
+			///开始撤销
+			function cancel_click() {
+				var btnArray = ['否', '是'];
+				mui.confirm('确认包裹的撤销(打包)操作？', 'jet@ime', btnArray, function(e) {
+					if(e.index == 1) {
+						var w = plus.nativeUI.showWaiting("正在获取数据");
+						jQuery.ajax({
+							type: "get",
+							url: ajaxUrl + "litePackageCancel",
+							data: {
+								userSafety: cookieGet("us"),
+								packageCode: $("#packageCode").val()
+							},
+							dataType: "jsonp",
+							crossDomain: true,
+							success: function(response) {
+								w.close();
+								if("success" == response[0].status) {
+
+								}
+							},
+							error: function() {
+								w.close();
+							}
+						})
+					}
+				})
+			}
+
+			//获取包裹号信息
+			function view_click() {
+				if(isNull($("#packageCode").val())) {
+					return;
+				}
+				var w = plus.nativeUI.showWaiting("正在获取数据");
+				jQuery.ajax({
+					type: "get",
+					url: ajaxUrl + "litePackageRead",
+					data: {
+						userSafety: cookieGet("us"),
+						packageCode: $("#packageCode").val()
+					},
+					dataType: "jsonp",
+					crossDomain: true,
+					success: function(response) {
+						w.close();
+						if("success" == response[0].status) {
+							var list = response[0].data;
+							list.forEach(function(value, index, array) {
+								$("#goodsName").html(array[index].goodsName);
+								$("#goodsPackageCode").html($("#packageCode").val());
+								$("#orderID").html(array[index].orderID);
+								$("#shopName").html(array[index].shopName);
+								$("#doUser").html(array[index].name);
+								$("#doTime").html(array[index].qr_time);
+								$("#num").html(array[index].num);
+							});
+						} else {
+							$("#goodsName").html("");
+							$("#goodsPackageCode").html("");
+							$("#orderID").html("");
+							$("#shopName").html("");
+							$("#doUser").html("");
+							$("#doTime").html("");
+							$("#num").html("");
+						}
+					},
+					error: function() {
+						w.close();
+					}
+				})
+			}
+		</script>
+
+	</head>
+
+	<body>
+		<header class="mui-bar mui-bar-nav">
+			<a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left"></a>
+			<h1 class="mui-title">撤销 </h1>
+		</header>
+		<div class="mui-card" style="margin-top: 55px;">
+			<div class="mui-card-header">描述</div>
+			<div class="mui-card-content">
+				<div class="mui-card-content-inner">
+					当出现人为误操作或其他突发状况时，可以撤回包裹内所有已打包商品
+				</div>
+			</div>
+			<!--			<div class="mui-card-footer">页脚</div>-->
+		</div>
+		<div class="mui-collapse-content">
+			<form class="mui-input-group">
+				<div class="mui-input-row">
+					<label>包裹编号</label>
+					<input type="text" id="packageCode" class="mui-input-speech mui-input-clear" placeholder="此处输入6位包号" data-input-clear="4" data-input-speech="4"><span class="mui-icon mui-icon-clear mui-hidden"></span><span onclick="startRecognize()" class="mui-icon mui-icon-speech"></span>
+				</div>
+				<div class="mui-button-row">
+					<button class="mui-btn mui-btn-primary" type="button" onclick="view_click()">查询</button>&nbsp;&nbsp;
+					<button class="mui-btn mui-btn-primary" type="button" onclick="cancel_click()">撤销</button>
+				</div>
+			</form>
+		</div>
+		<div class="mui-card">
+			<div class="mui-card-header mui-card-media">
+				<img src="img/package.png">
+				<div class="mui-media-body">
+					<span id="goodsName"></span>
+					<p id="goodsPackageCode"></p>
+				</div>
+			</div>
+			<!--<div class="mui-card-content">
+				<img src="img/tiantun.png" alt="" height="120px" width="100%">
+			</div>-->
+			<div class="mui-card-footer">
+				<a class="mui-card-link">订单编号</a>
+				<a id="orderID" class="mui-card-link" style="font-size: larger; font-weight: bold;"></a>
+			</div>
+			<div class="mui-card-footer">
+				<a class="mui-card-link">取货门店</a>
+				<a id="shopName" class="mui-card-link" style="font-size: larger; font-weight: bold;"></a>
+			</div>
+			<div class="mui-card-footer">
+				<a class="mui-card-link">确认人员</a>
+				<a id="doUser" class="mui-card-link" style="font-size: larger; font-weight: bold;"></a>
+			</div>
+			<div class="mui-card-footer">
+				<a class="mui-card-link">确认时间</a>
+				<a id="doTime" class="mui-card-link" style="font-size: larger; font-weight: bold;"></a>
+			</div>
+			<div class="mui-card-footer">
+				<a class="mui-card-link">确认数量</a>
+				<a id="num" class="mui-card-link" style="font-size: larger; font-weight: bold;"></a>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript">
+	</script>
+
+</html>
